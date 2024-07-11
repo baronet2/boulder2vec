@@ -35,7 +35,7 @@ Analysis whose data we're using: https://davidbreuer.github.io/ifsc-analysis/
 url = "https://github.com/DavidBreuer/ifsc-analysis/raw/main/ifsc_Boulder.xlsx"
 df = read.xlsx(url, sheet=1)
 
-str(df)
+df
 ```
 
 
@@ -74,7 +74,8 @@ str(data_clean)
 ```
 
 ```{r}
-data_clean
+num_na_values <- sum(is.na(data_clean$attempts))
+num_na_values
 ```
 
 ## Basic Survival Models
@@ -108,6 +109,9 @@ y = Surv(data_clean$time, event = data_clean$status)
 fit = cv.glmnet(X, y, family = "cox", alpha = 0.5)
 plot(fit)
 coef(fit, s = "lambda.min")
+```
+```{r}
+X
 ```
 
 Some ideas of features we can include:
