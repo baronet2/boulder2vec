@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,7 +14,7 @@ class PMF(nn.Module):
         super(PMF, self).__init__()
         self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
         self.climber_vocab.set_default_index(self.climber_vocab['other'])
-        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=num_factors, specials=['Problem'])
+        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=10000, specials=['Problem'])
         self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
         self.climber_embedding = nn.Embedding(len(self.climber_vocab), num_factors)
         self.problem_embedding = nn.Embedding(len(self.problem_vocab), num_factors)
@@ -71,4 +70,4 @@ if __name__ == '__main__':
             optimizer = optim.Adam(model.parameters(), lr=0.1)
 
             train_model(model, train, criterion, optimizer, NUM_EPOCHS)
-            torch.save(model, f"./models/model_{num_factors}_{replacement_level}.pth")
+            torch.save(model, f"models/pmf/model_{num_factors}_{replacement_level}.pth")

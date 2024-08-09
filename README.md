@@ -6,6 +6,9 @@
 - [ ] Update Requirements.txt
 - [ ] More Settings
 
+- [ ] SkLearn with LogReg - Wrapper Predict
+
+
 ## Instructions for Reproduction
 
 ```
