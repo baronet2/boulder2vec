@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -71,4 +70,4 @@ if __name__ == '__main__':
             optimizer = optim.Adam(model.parameters(), lr=0.1)
 
             train_model(model, train, criterion, optimizer, NUM_EPOCHS)
-            torch.save(model, f"./models/model_{num_factors}_{replacement_level}.pth")
+            torch.save(model, f"models/pmf/model_{num_factors}_{replacement_level}.pth")
