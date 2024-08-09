@@ -14,7 +14,7 @@ class PMF(nn.Module):
         super(PMF, self).__init__()
         self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
         self.climber_vocab.set_default_index(self.climber_vocab['other'])
-        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=10000, specials=['Problem'])
+        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=num_factors, specials=['Problem'])
         self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
         self.climber_embedding = nn.Embedding(len(self.climber_vocab), num_factors)
         self.problem_embedding = nn.Embedding(len(self.problem_vocab), num_factors)
