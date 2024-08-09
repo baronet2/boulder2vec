@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchtext; torchtext.disable_torchtext_deprecation_warning()
-from torchtext.vocab import build_vocab_from_iterator # Make sure to use Torch 2.3.0, Torchtext 0.18.0 => Add to README LAter
+from torchtext.vocab import build_vocab_from_iterator
 
 SEED = 42
 NUM_EPOCHS = 100
