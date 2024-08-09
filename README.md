@@ -1,6 +1,5 @@
 # Next steps
 
-- [ ] Replicate the PMF.py to LR.py
 - [ ] Handle Replication of Models via Seed
 - [ ] KFold Validation
 - [ ] Update Requirements.txt
