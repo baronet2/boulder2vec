@@ -4,9 +4,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torchtext; torchtext.disable_torchtext_deprecation_warning()
 from torchtext.vocab import build_vocab_from_iterator
+from sklearn.model_selection import KFold
 
 SEED = 42
 NUM_EPOCHS = 100
+K_FOLDS = 5
 
 # Create PMF Model
 class PMF(nn.Module):
@@ -37,7 +39,7 @@ class PMF(nn.Module):
         return predictions
 
 # Training function
-def train_model(model, df, criterion, optimizer, num_epochs):
+def train_model(model, df, criterion, optimizer, num_epochs): # warning about df redefinition 
     for epoch in range(num_epochs):
         model.train()
         optimizer.zero_grad()
@@ -48,6 +50,14 @@ def train_model(model, df, criterion, optimizer, num_epochs):
 
         if (epoch + 1) % 100 == 0:
             print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
+    return model 
+
+def validate_model(model, df, criterion):
+    model.eval()
+    with torch.no_grad():
+        val_predictions = model(df['Name'].values, df['Problem_ID'].values)
+        val_loss = criterion(val_predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
+    return val_loss.item()
 
 if __name__ == '__main__':
     import pandas as pd
@@ -59,15 +69,32 @@ if __name__ == '__main__':
 
     train, test = create_split(df, SEED)
 
+    kfold = KFold(n_splits=K_FOLDS, shuffle=True, random_state=SEED)
+
     for num_factors in np.arange(1, LATENT_FACTORS+1):
         for replacement_level in REPLACEMENT_LEVELS:
             #  Set Seed Here
             print(f'Commenced Training of PMF with Latent Factors: {num_factors} \t replacement_level: {replacement_level}')
+            
+            fold_res = []
+            for fold, (train_idx, val_idx) in enumerate(kfold.split(train)):
+                print(f"Fold {fold + 1}/{K_FOLDS}")
+                train_fold = train.iloc[train_idx]
+                val_fold = train.iloc[val_idx]
 
-            model = PMF(train, replacement_level, num_factors)
+                model = PMF(train_fold, replacement_level, num_factors)
+                criterion = nn.BCELoss()
+                optimizer = optim.Adam(model.parameters(), lr=0.1)
 
-            criterion = nn.BCELoss()
-            optimizer = optim.Adam(model.parameters(), lr=0.1)
+                # Train the model
+                trained_model = train_model(model, train_fold, criterion, optimizer, NUM_EPOCHS)
+                val_loss = validate_model(trained_model, val_fold, criterion)
 
-            train_model(model, train, criterion, optimizer, NUM_EPOCHS)
-            torch.save(model, f"models/pmf/model_{num_factors}_{replacement_level}.pth")
+                # Save the model for this fold
+                torch.save(trained_model.state_dict(), f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
+                fold_res.append(val_loss)
+
+                print(f"Fold {fold + 1} Validation Loss: {val_loss}")
+
+            # Print average validation loss across folds
+            print(f"Average validation loss: {np.mean(fold_res)}")
