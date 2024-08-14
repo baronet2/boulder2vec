@@ -5,10 +5,16 @@ import torch.optim as optim
 import torchtext #; torchtext.disable_torchtext_deprecation_warning()
 from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
+import random 
+import os 
+import pandas as pd
+from preprocessing import create_split
 
 SEED = 42
 NUM_EPOCHS = 10
 K_FOLDS = 5
+REPLACEMENT_LEVELS = [500,1000]
+LATENT_FACTORS = 2
 
 # Create PMF Model
 class PMF(nn.Module):
@@ -38,6 +44,20 @@ class PMF(nn.Module):
             predictions = self(df['Name'].values, df['Problem_ID'].values)
         return predictions
 
+# Setting seed function
+def set_seed(seed=42):
+    '''   
+    Modified the function here: https://wandb.ai/sauravmaheshkar/RSNA-MICCAI/reports/How-to-Set-Random-Seeds-in-PyTorch-and-Tensorflow--VmlldzoxMDA2MDQy 
+    Sets seeds for numpy, pytorch, python.random and PYTHONHASHSEED.
+    '''
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    #torch.cuda.manual_seed(seed)  # uncomment if ur using gpu, im using mac so idc
+
+    os.environ["PYTHONHASHSEED"] = str(seed) # for setting seed in hash operations in libraries 
+    print(f"Seed set as {seed}")
+
 # Training function
 def train_model(model, df, criterion, optimizer, num_epochs): # warning about df redefinition 
     for epoch in range(num_epochs):
@@ -54,12 +74,9 @@ def train_model(model, df, criterion, optimizer, num_epochs): # warning about df
 
 
 if __name__ == '__main__':
-    import pandas as pd
-    from preprocessing import create_split
+    set_seed(SEED)
+
     df = pd.read_csv('data/men_data.csv')
-    REPLACEMENT_LEVELS = [500,1000]
-    SEED = 42
-    LATENT_FACTORS = 2
 
     train, test = create_split(df, SEED)
 
@@ -67,10 +84,8 @@ if __name__ == '__main__':
 
     for num_factors in np.arange(1, LATENT_FACTORS+1):
         for replacement_level in REPLACEMENT_LEVELS:
-            #  Set Seed Here
             print(f'Commenced Training of PMF with Latent Factors: {num_factors} \t replacement_level: {replacement_level}')
             
-            fold_res = []
             for fold, (train_idx, val_idx) in enumerate(kfold.split(train)):
                 print(f"Fold {fold + 1}/{K_FOLDS}")
                 train_fold = train.iloc[train_idx]
@@ -84,8 +99,6 @@ if __name__ == '__main__':
                 trained_model = train_model(model, train_fold, criterion, optimizer, NUM_EPOCHS)
 
                 # Save the model for this fold
-                print(f"Saving model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
-                torch.save(trained_model.state_dict(), f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
-                torch.save({'model_state_dict': trained_model.state_dict(), 'val_indices': val_idx}, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
-
+                print(f"Saving PMF model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
+                torch.save({'model_state_dict': trained_model.state_dict(),'val_indices': val_idx}, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
             print(f"Completed training for Latent Factors: {num_factors}, replacement_level: {replacement_level}")
