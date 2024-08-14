@@ -3,7 +3,6 @@ from sklearn.metrics import log_loss
 from sklearn.metrics import brier_score_loss
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
-
 import numpy as np
 
 
@@ -21,6 +20,11 @@ def analyze_model(model, df):
     }
     return results
 
+def pmf_validation(train_data, model_type, num_factors, replacement_level):
+    fold_res = []
+    for fold in range(1, K_FOLDS + 1):
+        model al
+
 if __name__ == '__main__':
     import pandas as pd
     import torch
@@ -32,6 +36,7 @@ if __name__ == '__main__':
     data = pd.read_csv('data/men_data.csv')
     REPLACEMENT_LEVELS = [500,1000]
     SEED = 42
+    K_FOLDS = 5
 
     train, test = create_split(data, SEED)
 
@@ -49,5 +54,11 @@ if __name__ == '__main__':
     print(f"Train: {analyze_model(lr_model, train)}")
     print(f"Test: {analyze_model(lr_model, test)}")
 
-
-
+# Move validation function out
+# Add to eval script,  validation part of it
+def validate_model(model, df, criterion):
+    model.eval()
+    with torch.no_grad():
+        val_predictions = model(df['Name'].values, df['Problem_ID'].values)
+        val_loss = criterion(val_predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
+    return val_loss.item()

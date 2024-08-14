@@ -2,12 +2,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchtext; torchtext.disable_torchtext_deprecation_warning()
+import torchtext #; torchtext.disable_torchtext_deprecation_warning()
 from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
 
 SEED = 42
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 K_FOLDS = 5
 
 # Create PMF Model
@@ -52,12 +52,6 @@ def train_model(model, df, criterion, optimizer, num_epochs): # warning about df
             print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
     return model 
 
-def validate_model(model, df, criterion):
-    model.eval()
-    with torch.no_grad():
-        val_predictions = model(df['Name'].values, df['Problem_ID'].values)
-        val_loss = criterion(val_predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
-    return val_loss.item()
 
 if __name__ == '__main__':
     import pandas as pd
@@ -88,13 +82,13 @@ if __name__ == '__main__':
 
                 # Train the model
                 trained_model = train_model(model, train_fold, criterion, optimizer, NUM_EPOCHS)
-                val_loss = validate_model(trained_model, val_fold, criterion)
 
                 # Save the model for this fold
+                print(f"Saving model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
                 torch.save(trained_model.state_dict(), f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
-                fold_res.append(val_loss)
+                torch.save({
+                    'model_state_dict': trained_model.state_dict(),
+                    'val_indices': val_idx 
+                }, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
 
-                print(f"Fold {fold + 1} Validation Loss: {val_loss}")
-
-            # Print average validation loss across folds
-            print(f"Average validation loss: {np.mean(fold_res)}")
+            print(f"Completed training for Latent Factors: {num_factors}, replacement_level: {replacement_level}")
