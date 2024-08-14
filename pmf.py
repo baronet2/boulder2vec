@@ -86,9 +86,6 @@ if __name__ == '__main__':
                 # Save the model for this fold
                 print(f"Saving model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
                 torch.save(trained_model.state_dict(), f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
-                torch.save({
-                    'model_state_dict': trained_model.state_dict(),
-                    'val_indices': val_idx 
-                }, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
+                torch.save({'model_state_dict': trained_model.state_dict(), 'val_indices': val_idx}, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
 
             print(f"Completed training for Latent Factors: {num_factors}, replacement_level: {replacement_level}")

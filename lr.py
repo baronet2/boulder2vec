@@ -36,8 +36,8 @@ if __name__ == '__main__':
     df = pd.read_csv('data/men_data.csv')
     REPLACEMENT_LEVELS = [500,1000]
 
-
     train, test = create_split(df, SEED)
+
     kfold = KFold(n_splits=K_FOLDS, shuffle=True, random_state=SEED)
 
     for replacement_level in REPLACEMENT_LEVELS:
@@ -53,9 +53,6 @@ if __name__ == '__main__':
             # Save the model and validation indices for this fold
             print(f"Saving LogReg Model with replacement_level: {replacement_level}, fold {fold + 1}")
             with open(f"models/lr/model_{replacement_level}_fold_{fold+1}.pkl", 'wb') as f:
-                pickle.dump({
-                    'model': model,
-                    'val_indices': val_idx
-                }, f)
+                pickle.dump({'model': model,'val_indices': val_idx}, f)
 
         print(f'Completed Training of LogReg with replacement_level: {replacement_level}')
