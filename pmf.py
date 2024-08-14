@@ -10,12 +10,6 @@ import os
 import pandas as pd
 from preprocessing import create_split
 
-SEED = 42
-NUM_EPOCHS = 10
-K_FOLDS = 5
-REPLACEMENT_LEVELS = [500,1000]
-LATENT_FACTORS = 2
-
 # Create PMF Model
 class PMF(nn.Module):
     def __init__(self, df, replacement_level, num_factors):
@@ -74,6 +68,11 @@ def train_model(model, df, criterion, optimizer, num_epochs): # warning about df
 
 
 if __name__ == '__main__':
+    SEED = 42
+    NUM_EPOCHS = 5
+    K_FOLDS = 5
+    REPLACEMENT_LEVELS = [500,1000]
+    LATENT_FACTORS = 2
     set_seed(SEED)
 
     df = pd.read_csv('data/men_data.csv')

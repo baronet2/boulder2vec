@@ -10,10 +10,6 @@ from preprocessing import create_split
 import os 
 import random 
 
-SEED = 42
-NUM_EPOCHS = 100
-K_FOLDS = 5
-
 class LogReg():
     def __init__(self, df, replacement_level):
         self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
@@ -47,6 +43,9 @@ def set_seed(seed=42):
 
 if __name__ == '__main__':
     df = pd.read_csv('data/men_data.csv')
+    SEED = 42
+    NUM_EPOCHS = 100
+    K_FOLDS = 5
     REPLACEMENT_LEVELS = [500,1000]
 
     train, test = create_split(df, SEED)
