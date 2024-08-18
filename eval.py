@@ -6,7 +6,6 @@ from sklearn.metrics import roc_auc_score
 import numpy as np
 import torch 
 
-
 def analyze_model(model, df):
     y_true = df['Status'].values
     y_pred = model.predict(df)
