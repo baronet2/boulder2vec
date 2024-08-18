@@ -10,8 +10,6 @@ class LogReg():
         self.climber_vocab.set_default_index(self.climber_vocab['other'])
 
         X = self.create_X(df)
-        print(X.shape)
-
         y = df['Status'].values
 
         self.lr = LogisticRegression(max_iter=1000, random_state=SEED).fit(X, y)
@@ -23,35 +21,26 @@ class LogReg():
     def predict(self, df):
         return self.lr.predict_proba(self.create_X(df))[:, 1]
 
+
 if __name__ == '__main__':
     import pandas as pd
     import pickle
-    from preprocessing import create_split
     from sklearn.model_selection import KFold
 
-    df = pd.read_csv('data/men_data.csv')
     SEED = 42
-    NUM_EPOCHS = 100
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500,1000]
+    REPLACEMENT_LEVELS = [500, 1000]
 
-    train, test = create_split(df, SEED)
+    df = pd.read_csv('data/men_data.csv')
 
     kfold = KFold(n_splits=K_FOLDS, shuffle=True, random_state=SEED)
 
-    for replacement_level in REPLACEMENT_LEVELS:
-        #  Set Seed Here
-        print(f'Commenced Training of LogReg with replacement_level: {replacement_level}')
-        for fold, (train_idx, val_idx) in enumerate(kfold.split(train)):
-            print(f'Fold: {fold+1}')
-            train_fold = train.iloc[train_idx]
-            val_fold = train.iloc[val_idx]
+    for fold, (train_idx, val_idx) in enumerate(kfold.split(df)):
+        train = df.iloc[train_idx]
+        print(fold, train.shape, train['Name'].iloc[0])
 
-            model = LogReg(train, replacement_level) # Creates and Trains Model in Init
-
-            # Save the model and validation indices for this fold
-            print(f"Saving LogReg Model with replacement_level: {replacement_level}, fold {fold + 1}")
-            with open(f"models/lr/model_{replacement_level}_fold_{fold+1}.pkl", 'wb') as f:
-                pickle.dump({'model': model,'val_indices': val_idx}, f)
-
-        print(f'Completed Training of LogReg with replacement_level: {replacement_level}')
+        for replacement_level in REPLACEMENT_LEVELS:
+            print(f"Training LR model for fold {fold}, replacement level {replacement_level}")
+            model = LogReg(train, replacement_level)
+            with open(f"models/lr/model_rl_{replacement_level}_fold_{fold}.pkl", 'wb') as f:
+                pickle.dump(model, f)
