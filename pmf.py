@@ -77,10 +77,10 @@ if __name__ == '__main__':
     from sklearn.model_selection import KFold
 
     SEED = 42
-    NUM_EPOCHS = 5
+    NUM_EPOCHS = 1000
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500,1000]
-    LATENT_FACTORS = 2
+    REPLACEMENT_LEVELS = [50, 100, 250, 500, 1000]
+    LATENT_FACTORS = 4
     set_seed(SEED)
 
     men_df = pd.read_csv('data/men_data.csv')

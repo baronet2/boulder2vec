@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     df = pd.read_csv('data/men_data.csv')
     SEED = 42
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 1000
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500,1000]
+    REPLACEMENT_LEVELS = [50, 100, 250, 500, 1000]
 
     train, test = create_split(df, SEED)
 
