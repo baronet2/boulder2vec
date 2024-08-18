@@ -4,7 +4,7 @@ from sklearn.metrics import brier_score_loss
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
 import numpy as np
-import torch 
+import torch
 
 def analyze_model(model, df):
     y_true = df['Status'].values
@@ -19,15 +19,6 @@ def analyze_model(model, df):
         "ROC Score": roc_auc_score(y_true, y_pred)
     }
     return results
-
-# Move validation function out
-# Add to eval script,  validation part of it
-def validate_model(model, df, criterion):
-    model.eval()
-    with torch.no_grad():
-        val_predictions = model(df['Name'].values, df['Problem_ID'].values)
-        val_loss = criterion(val_predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
-    return val_loss.item()
 
 if __name__ == '__main__':
     import pandas as pd

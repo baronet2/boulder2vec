@@ -9,12 +9,20 @@ import os
 
 # Create PMF Model
 class PMF(nn.Module):
-    def __init__(self, df, replacement_level, num_factors):
+    def __init__(self, df, climber_vocab=None, problem_vocab=None, replacement_level=500, num_factors=1):
         super(PMF, self).__init__()
-        self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
-        self.climber_vocab.set_default_index(self.climber_vocab['other'])
-        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=num_factors, specials=['Problem'])
-        self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
+        if climber_vocab is None:
+            self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
+            self.climber_vocab.set_default_index(self.climber_vocab['other'])
+        else:
+            self.climber_vocab = climber_vocab
+        
+        if problem_vocab is None:
+            self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=num_factors, specials=['Problem'])
+            self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
+        else:
+            self.problem_vocab = problem_vocab
+
         self.climber_embedding = nn.Embedding(len(self.climber_vocab), num_factors)
         self.problem_embedding = nn.Embedding(len(self.problem_vocab), num_factors)
 
@@ -67,7 +75,7 @@ if __name__ == '__main__':
     import pandas as pd
     from preprocessing import create_split
     from sklearn.model_selection import KFold
-    
+
     SEED = 42
     NUM_EPOCHS = 5
     K_FOLDS = 5
@@ -90,7 +98,7 @@ if __name__ == '__main__':
                 train_fold = train.iloc[train_idx]
                 val_fold = train.iloc[val_idx]
                 
-                model = PMF(train_fold, replacement_level, num_factors)
+                model = PMF(df=train_fold, climber_vocab=None, problem_vocab=None, replacement_level=replacement_level,num_factors=num_factors)
                 criterion = nn.BCELoss()
                 optimizer = optim.Adam(model.parameters(), lr=0.1)
 
@@ -100,5 +108,10 @@ if __name__ == '__main__':
 
                 # Save the model for this fold
                 print(f"Saving PMF model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
-                torch.save({'model_state_dict': trained_model.state_dict(),'val_indices': val_idx}, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
+                torch.save({
+                    'model_state_dict': trained_model.state_dict(),
+                    'val_indices': val_idx,
+                    'climber_vocab': trained_model.climber_vocab,
+                    'problem_vocab': trained_model.problem_vocab
+                }, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
             print(f"Completed training for Latent Factors: {num_factors}, replacement_level: {replacement_level}")
