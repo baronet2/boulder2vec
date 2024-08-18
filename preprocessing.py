@@ -23,7 +23,6 @@ if __name__ == '__main__':
             var_name='Problem', value_name='Attempts')
         .dropna(subset=['Attempts'])
         .replace([-np.inf, np.inf], np.nan)
-
     )
 
     # Keep completed boulders

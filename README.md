@@ -9,7 +9,7 @@
 ## Instructions for Reproduction
 
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 
 python preprocessing.py
 python pmf.py
