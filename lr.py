@@ -1,5 +1,5 @@
 import numpy as np
-import torchtext#; torchtext.disable_torchtext_deprecation_warning()
+import torchtext
 from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
@@ -41,6 +41,9 @@ def set_seed(seed=42):
     print(f"Seed set as {seed}")
 
 if __name__ == '__main__':
+    import pandas as pd
+    import pickle
+    from preprocessing import create_split
     df = pd.read_csv('data/men_data.csv')
     SEED = 42
     NUM_EPOCHS = 100

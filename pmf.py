@@ -2,13 +2,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchtext #; torchtext.disable_torchtext_deprecation_warning()
+import torchtext 
 from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
 import random 
 import os 
-import pandas as pd
-from preprocessing import create_split
+
 
 # Create PMF Model
 class PMF(nn.Module):
@@ -68,6 +67,8 @@ def train_model(model, df, criterion, optimizer, num_epochs):
 
 
 if __name__ == '__main__':
+    import pandas as pd
+    from preprocessing import create_split
     SEED = 42
     NUM_EPOCHS = 5
     K_FOLDS = 5
