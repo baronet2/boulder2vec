@@ -4,10 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torchtext 
 from torchtext.vocab import build_vocab_from_iterator
-from sklearn.model_selection import KFold
 import random 
 import os 
-
 
 # Create PMF Model
 class PMF(nn.Module):
@@ -63,12 +61,13 @@ def train_model(model, df, criterion, optimizer, num_epochs):
 
         if (epoch + 1) % 100 == 0:
             print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
-    return model 
-
+    return model
 
 if __name__ == '__main__':
     import pandas as pd
     from preprocessing import create_split
+    from sklearn.model_selection import KFold
+    
     SEED = 42
     NUM_EPOCHS = 5
     K_FOLDS = 5

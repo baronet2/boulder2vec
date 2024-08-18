@@ -1,7 +1,6 @@
 import numpy as np
 import torchtext
 from torchtext.vocab import build_vocab_from_iterator
-from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 
@@ -28,6 +27,8 @@ if __name__ == '__main__':
     import pandas as pd
     import pickle
     from preprocessing import create_split
+    from sklearn.model_selection import KFold
+
     df = pd.read_csv('data/men_data.csv')
     SEED = 42
     NUM_EPOCHS = 100
