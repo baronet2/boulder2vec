@@ -4,8 +4,6 @@ from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
-import os 
-import random 
 
 class LogReg():
     def __init__(self, df, replacement_level):
