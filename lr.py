@@ -4,9 +4,6 @@ from torchtext.vocab import build_vocab_from_iterator
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
-import pandas as pd
-import pickle
-from preprocessing import create_split
 import os 
 import random 
 
@@ -28,17 +25,6 @@ class LogReg():
 
     def predict(self, df):
         return self.lr.predict_proba(self.create_X(df))[:, 1]
-
-def set_seed(seed=42):
-    '''   
-    Modified the function here: https://wandb.ai/sauravmaheshkar/RSNA-MICCAI/reports/How-to-Set-Random-Seeds-in-PyTorch-and-Tensorflow--VmlldzoxMDA2MDQy 
-    Sets seeds for numpy, python.random and PYTHONHASHSEED.
-    '''
-    np.random.seed(seed)
-    random.seed(seed)
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    
-    print(f"Seed set as {seed}")
 
 if __name__ == '__main__':
     import pandas as pd
