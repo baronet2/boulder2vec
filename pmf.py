@@ -66,11 +66,14 @@ if __name__ == '__main__':
     import pandas as pd
     from sklearn.model_selection import KFold
 
+    device = torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("USE_MPS") else "cpu")
+    
+
     SEED = 42
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500, 1000]
-    LATENT_FACTORS = [1, 2]
-    NUM_EPOCHS = 5
+    REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
+    LATENT_FACTORS = [1, 2, 3, 4, 5, 6]
+    NUM_EPOCHS = 1000
 
     df = pd.read_csv('data/men_data.csv')
 

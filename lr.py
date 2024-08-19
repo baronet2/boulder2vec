@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     SEED = 42
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500, 1000]
+    REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
 
     df = pd.read_csv('data/men_data.csv')
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         print(fold, train.shape, train['Name'].iloc[0])
 
         for replacement_level in REPLACEMENT_LEVELS:
-            print(f"Training LR model for fold {fold}, replacement level {replacement_level}")
+            print(f"Training LR model for fold {fold }, replacement level {replacement_level}")
             model = LogReg(train, replacement_level)
             with open(f"models/lr/model_rl_{replacement_level}_fold_{fold}.pkl", 'wb') as f:
                 pickle.dump(model, f)
