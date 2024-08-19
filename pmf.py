@@ -47,7 +47,6 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)  # uncomment if ur using gpu / set cuda 
     os.environ["PYTHONHASHSEED"] = str(seed) # for setting seed in hash operations in libraries 
-    print(f"Seed set as {seed}")
 
 # Training function
 def train_model(model, df, criterion, optimizer, num_epochs):
@@ -61,44 +60,33 @@ def train_model(model, df, criterion, optimizer, num_epochs):
 
         if (epoch + 1) % 100 == 0:
             print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
-    return model
+
 
 if __name__ == '__main__':
     import pandas as pd
-    from preprocessing import create_split
     from sklearn.model_selection import KFold
-    
+
     SEED = 42
-    NUM_EPOCHS = 5
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500,1000]
-    LATENT_FACTORS = 2
-    set_seed(SEED)
+    REPLACEMENT_LEVELS = [500, 1000]
+    LATENT_FACTORS = [1, 2]
+    NUM_EPOCHS = 5
 
-    men_df = pd.read_csv('data/men_data.csv')
-
-    train, test = create_split(men_df, SEED)
+    df = pd.read_csv('data/men_data.csv')
 
     kfold = KFold(n_splits=K_FOLDS, shuffle=True, random_state=SEED)
 
-    for num_factors in np.arange(1, LATENT_FACTORS+1):
-        for replacement_level in REPLACEMENT_LEVELS:
-            print(f'Commenced Training of PMF with Latent Factors: {num_factors} \t replacement_level: {replacement_level}')
-            
-            for fold, (train_idx, val_idx) in enumerate(kfold.split(train)):
-                print(f"Fold {fold + 1}/{K_FOLDS}")
-                train_fold = train.iloc[train_idx]
-                val_fold = train.iloc[val_idx]
-                
-                model = PMF(train_fold, replacement_level, num_factors)
+    for fold, (train_idx, val_idx) in enumerate(kfold.split(df)):
+        train = df.iloc[train_idx]
+        print(fold, train.shape, train['Name'].iloc[0])
+
+        for num_factors in LATENT_FACTORS:
+            for replacement_level in REPLACEMENT_LEVELS:
+                print(f"Training PMF model for fold {fold}, replacement level {replacement_level}, dimension {num_factors}")
+                set_seed(SEED)
+                model = PMF(train, replacement_level, num_factors)
                 criterion = nn.BCELoss()
                 optimizer = optim.Adam(model.parameters(), lr=0.1)
 
-                # Train the model
-                print(f"Training...")
-                trained_model = train_model(model, train_fold, criterion, optimizer, NUM_EPOCHS)
-
-                # Save the model for this fold
-                print(f"Saving PMF model for replacement level {replacement_level}, latent factor {num_factors}, fold {fold + 1}")
-                torch.save({'model_state_dict': trained_model.state_dict(),'val_indices': val_idx}, f"models/pmf/model_{num_factors}_{replacement_level}_fold_{fold+1}.pth")
-            print(f"Completed training for Latent Factors: {num_factors}, replacement_level: {replacement_level}")
+                train_model(model, train, criterion, optimizer, NUM_EPOCHS)
+                torch.save(model, f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_fold_{fold}.pth")
