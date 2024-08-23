@@ -2,4 +2,4 @@ __pycache__
 .DS_Store
 venv
 .vscode
-.sh
+run_all.sh
