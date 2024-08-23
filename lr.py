@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     SEED = 42
     K_FOLDS = 5
-    REPLACEMENT_LEVELS = [500, 1000]
+    REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
 
     df = pd.read_csv('data/men_data.csv')
 
