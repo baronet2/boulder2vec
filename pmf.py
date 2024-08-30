@@ -90,3 +90,14 @@ if __name__ == '__main__':
 
                 train_model(model, train, criterion, optimizer, NUM_EPOCHS)
                 torch.save(model, f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_fold_{fold}.pth")
+
+    for num_factors in LATENT_FACTORS:
+        for replacement_level in REPLACEMENT_LEVELS:
+            print(f"Training PMF model for full data, replacement level {replacement_level}, dimension {num_factors}")
+            set_seed(SEED)
+            model = PMF(df, replacement_level, num_factors)
+            criterion = nn.BCELoss()
+            optimizer = optim.Adam(model.parameters(), lr=0.1)
+
+            train_model(model, df, criterion, optimizer, NUM_EPOCHS)
+            torch.save(model, f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_full_data.pth")
