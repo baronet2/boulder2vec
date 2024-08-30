@@ -70,7 +70,7 @@ if __name__ == '__main__':
     SEED = 42
     K_FOLDS = 5
     REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
-    LATENT_FACTORS = [1, 2, 3, 4, 5, 6]
+    LATENT_FACTORS = [1, 2, 3, 4]
     NUM_EPOCHS = 1000
 
     df = pd.read_csv('data/men_data.csv')
