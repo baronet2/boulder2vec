@@ -79,7 +79,6 @@ if __name__ == '__main__':
 
     for fold, (train_idx, val_idx) in enumerate(kfold.split(df)):
         train = df.iloc[train_idx]
-        print(fold, train.shape, train['Name'].iloc[0])
 
         for num_factors in LATENT_FACTORS:
             for replacement_level in REPLACEMENT_LEVELS:
