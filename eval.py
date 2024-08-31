@@ -20,14 +20,6 @@ def analyze_model(model, df):
     }
     return results
 
-# Move validation function out
-# Add to eval script,  validation part of it
-def validate_model(model, df, criterion):
-    model.eval()
-    with torch.no_grad():
-        val_predictions = model(df['Name'].values, df['Problem_ID'].values)
-        val_loss = criterion(val_predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
-    return val_loss.item()
 
 if __name__ == '__main__':
     import pandas as pd

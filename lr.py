@@ -15,8 +15,16 @@ class LogReg():
         self.lr = LogisticRegression(max_iter=1000, random_state=SEED).fit(X, y)
 
     def create_X(self, df):
-        encoder = OneHotEncoder(drop='first', sparse_output=False)
-        return encoder.fit_transform(np.array([self.climber_vocab[name] for name in df['Name']]).reshape(-1,1))
+        # Before one-hot encoding, set category levels to ensure we get the columns we want
+
+        climber_ints = self.climber_vocab(list(df['Name']))
+        climber_encoder = OneHotEncoder(categories=[list(range(len(self.climber_vocab)))], sparse_output=False)
+        climber_X = climber_encoder.fit_transform(np.array(climber_ints).reshape(-1,1))
+
+        level_encoder = OneHotEncoder(categories=[["Q", "S", "F"]], sparse_output=False)
+        level_X = level_encoder.fit_transform(df['Level'].values.reshape(-1,1))
+        
+        return np.hstack([climber_X, level_X])
 
     def predict(self, df):
         return self.lr.predict_proba(self.create_X(df))[:, 1]
@@ -37,10 +45,15 @@ if __name__ == '__main__':
 
     for fold, (train_idx, val_idx) in enumerate(kfold.split(df)):
         train = df.iloc[train_idx]
-        print(fold, train.shape, train['Name'].iloc[0])
 
         for replacement_level in REPLACEMENT_LEVELS:
             print(f"Training LR model for fold {fold}, replacement level {replacement_level}")
             model = LogReg(train, replacement_level)
             with open(f"models/lr/model_rl_{replacement_level}_fold_{fold}.pkl", 'wb') as f:
                 pickle.dump(model, f)
+    
+    for replacement_level in REPLACEMENT_LEVELS:
+        print(f"Training LR model for full data, replacement level {replacement_level}")
+        model = LogReg(df, replacement_level)
+        with open(f"models/lr/model_rl_{replacement_level}_full_data.pkl", 'wb') as f:
+            pickle.dump(model, f)
