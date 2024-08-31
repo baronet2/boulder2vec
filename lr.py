@@ -51,3 +51,9 @@ if __name__ == '__main__':
             model = LogReg(train, replacement_level)
             with open(f"models/lr/model_rl_{replacement_level}_fold_{fold}.pkl", 'wb') as f:
                 pickle.dump(model, f)
+    
+    for replacement_level in REPLACEMENT_LEVELS:
+        print(f"Training LR model for full data, replacement level {replacement_level}")
+        model = LogReg(df, replacement_level)
+        with open(f"models/lr/model_rl_{replacement_level}_full_data.pkl", 'wb') as f:
+            pickle.dump(model, f)

@@ -13,7 +13,7 @@ class PMF(nn.Module):
         super(PMF, self).__init__()
         self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
         self.climber_vocab.set_default_index(self.climber_vocab['other'])
-        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=num_factors, specials=['Problem'])
+        self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=10, specials=['Problem'])
         self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
         self.climber_embedding = nn.Embedding(len(self.climber_vocab), num_factors)
         self.problem_embedding = nn.Embedding(len(self.problem_vocab), num_factors)
@@ -24,7 +24,6 @@ class PMF(nn.Module):
 
         climber_vector = self.climber_embedding(climber_indices)
         problem_vector = self.problem_embedding(problem_indices)
-
 
         dot_product = (climber_vector * problem_vector).sum(dim=1)
         outputs = torch.sigmoid(dot_product)
@@ -66,13 +65,12 @@ if __name__ == '__main__':
     import pandas as pd
     from sklearn.model_selection import KFold
 
-    device = torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("USE_MPS") else "cpu")
+    torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("USE_MPS") else "cpu")
     
-
     SEED = 42
     K_FOLDS = 5
     REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
-    LATENT_FACTORS = [1, 2, 3, 4, 5, 6]
+    LATENT_FACTORS = [1, 2, 3, 4]
     NUM_EPOCHS = 1000
 
     df = pd.read_csv('data/men_data.csv')
@@ -81,7 +79,6 @@ if __name__ == '__main__':
 
     for fold, (train_idx, val_idx) in enumerate(kfold.split(df)):
         train = df.iloc[train_idx]
-        print(fold, train.shape, train['Name'].iloc[0])
 
         for num_factors in LATENT_FACTORS:
             for replacement_level in REPLACEMENT_LEVELS:
@@ -93,3 +90,14 @@ if __name__ == '__main__':
 
                 train_model(model, train, criterion, optimizer, NUM_EPOCHS)
                 torch.save(model, f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_fold_{fold}.pth")
+
+    for num_factors in LATENT_FACTORS:
+        for replacement_level in REPLACEMENT_LEVELS:
+            print(f"Training PMF model for full data, replacement level {replacement_level}, dimension {num_factors}")
+            set_seed(SEED)
+            model = PMF(df, replacement_level, num_factors)
+            criterion = nn.BCELoss()
+            optimizer = optim.Adam(model.parameters(), lr=0.1)
+
+            train_model(model, df, criterion, optimizer, NUM_EPOCHS)
+            torch.save(model, f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_full_data.pth")
