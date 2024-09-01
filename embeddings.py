@@ -10,88 +10,64 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
 
-def get_accuracy(df, model, names, mask):
-    accuracies = []
-    for name in reversed(names):
-        if mask:
-            df_cut = df.loc[df.Name == name]
-        else:
-            df_cut = df.loc[df.Problem_ID == name]
-
-        y_true = df_cut['Status'].values
-        y_pred = model.predict(df_cut)
-        y_pred_binary = np.round(y_pred)
-
-        accuracies.append(accuracy_score(y_true, y_pred_binary))
-    return accuracies
-
-def get_counts(df, names, mask):
-    counts = []
-    for name in names:
-        if mask:
-            df_cut = df.loc[df.Name == name]
-        else:
-            df_cut = df.loc[df.Problem_ID == name]
-        counts.append(df_cut.shape[0])
-    return counts
-
-def get_success(df, names, mask):
-    success = []
-    for name in names:
-        if mask:
-            df_cut = df.loc[df.Name == name]
-        else:
-            df_cut = df.loc[df.Problem_ID == name]
-        success.append(df_cut['Status'].mean())
-    return success
+def get_accuracy_helper(df, model):
+    y_true = df['Status'].values
+    y_pred = model.predict(df)
+    y_pred_binary = np.round(y_pred)
+    return accuracy_score(y_true, y_pred_binary)
 
 def create_climbers_df():
     climbers = {}
 
+    grouped_df = df.groupby('Name')
+    size_by_name = grouped_df.size()
+    success_by_name = grouped_df['Status'].mean()
+
     for replacement_level in REPLACEMENT_LEVELS:
+
+        ### Handle the LR Model
         with open(f"models/lr/model_rl_{replacement_level}_full_data.pkl", 'rb') as f:
             lr_model = pickle.load(f)
 
-        ### Handle Climbers (LR)
         lr_climber_names = lr_model.climber_vocab.get_itos()[1:]
+        lr_coefs = lr_model.lr.coef_.flatten()[1:-3] ### may adjust after other edits
+
         lr_climbers = pd.DataFrame({
-            "coefs": lr_model.lr.coef_.flatten().tolist()[1:-3],
+            "coefs": lr_coefs,
         }, index=lr_climber_names)
 
         for num_factors in LATENT_FACTORS:
 
-            ### Handle Climbers (PMF)
+            ### Handle the PMF Model
             pmf_model = torch.load(f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_full_data.pth")
             pmf_model.eval()
 
             pmf_climber_names = pmf_model.climber_vocab.get_itos()[1:]
+            weights = pmf_model.climber_embedding.weight.data.numpy()[1:]
+
+            ### Create Metrics
             pmf_climbers = pd.DataFrame({
-                "weights": pmf_model.climber_embedding.weight.data.numpy().tolist()[1:],
-                "pmf_accuracy": get_accuracy(df, pmf_model, pmf_climber_names, True),
-                "size": get_counts(df, pmf_climber_names, True),
-                "success": get_success(df, pmf_climber_names, True),
-                # "height": ,
-                # "weight": ,
-                # "bmi"
+                "weights": list(weights),
+                "pmf_accuracy": grouped_df.apply(lambda group: get_accuracy_helper(group, pmf_model)).reindex(pmf_climber_names),
+                "size": size_by_name.reindex(pmf_climber_names),
+                "success": success_by_name.reindex(pmf_climber_names),
             }, index=pmf_climber_names)
 
-            weights = pmf_climbers['weights'].apply(pd.Series)
-            pmf_climbers = pd.concat([pmf_climbers[['pmf_accuracy','size', 'success']], weights], axis=1)
-            pmf_climbers.columns = ['pmf_accuracy', 'size', 'success'] + [f'weight_{i+1}' for i in range(weights.shape[1])]
+            weight_columns = pd.DataFrame(pmf_climbers['weights'].tolist(), index=pmf_climbers.index)
+            weight_columns.columns = [f'weight_{i+1}' for i in range(weight_columns.shape[1])]
+            pmf_climbers = pd.concat([pmf_climbers.drop(columns=['weights']), weight_columns], axis=1)
 
-            ### Merge Climbers
-            lr_pmf_climbers = pd.merge(lr_climbers, pmf_climbers, left_index=True, right_index=True, how='outer')
-            lr_pmf_climbers.dropna(inplace=True)
+            ### Merge LR and PMF
+            lr_pmf_climbers = pd.merge(lr_climbers, pmf_climbers, left_index=True, right_index=True, how='outer').dropna()
 
             ### Create PCs
-            embeddings = lr_pmf_climbers[[row for row in lr_pmf_climbers.columns if row.startswith('w')]].values
-            components = min(embeddings.shape[0], embeddings.shape[1])
-            pca = PCA(n_components=components)
+            embeddings = lr_pmf_climbers[[col for col in lr_pmf_climbers.columns if col.startswith('weight_')]].values
+            pca = PCA(n_components=min(embeddings.shape))
             pcs = pca.fit_transform(embeddings)
-
-            for pc in range(components):
+            for pc in range(pcs.shape[1]):
                 lr_pmf_climbers[f'PC{pc+1}'] = pcs[:, pc]
 
+            # Store the result in the dictionary
             climbers[f'{replacement_level}_{num_factors}'] = lr_pmf_climbers
 
     return climbers
@@ -161,41 +137,43 @@ def create_pc_figures(df, variable, path, datatype):
 def create_problems_df():
     problems = {}
 
+    grouped_df = df.groupby('Problem_ID')
+    size_by_problem_id = grouped_df.size()
+    success_by_problem_id = grouped_df['Status'].mean()
+
     for replacement_level in REPLACEMENT_LEVELS:
         for num_factors in LATENT_FACTORS:
 
-            ### Handle Climbers (PMF)
+            ### Handle the PMF model
             pmf_model = torch.load(f"models/pmf/model_rl_{replacement_level}_d_{num_factors}_full_data.pth")
             pmf_model.eval()
 
             pmf_problem_ids = pmf_model.problem_vocab.get_itos()[1:]
+            weights = pmf_model.problem_embedding.weight.data.numpy()[1:]
+
+            ### Create Metrics
             pmf_problems = pd.DataFrame({
-                "weights": pmf_model.problem_embedding.weight.data.numpy().tolist()[1:],
-                "pmf_accuracy": get_accuracy(df, pmf_model, pmf_problem_ids, False),
-                "size": get_counts(df, pmf_problem_ids, False),
-                "success": get_success(df, pmf_problem_ids, False),
+                "weights": list(weights),
+                "pmf_accuracy": grouped_df.apply(lambda group: get_accuracy_helper(group, pmf_model)).reindex(pmf_problem_ids),
+                "size": size_by_problem_id.reindex(pmf_problem_ids),
+                "success": success_by_problem_id.reindex(pmf_problem_ids),
                 "year": [float(problem.split('_')[0]) for problem in pmf_problem_ids],
                 "round": [problem.split('_')[-2] for problem in pmf_problem_ids],
                 "category": [problem.split('_')[-1][:-1] for problem in pmf_problem_ids],
             }, index=pmf_problem_ids)
 
-            weights = pmf_problems['weights'].apply(pd.Series)
-            pmf_problems = pd.concat([pmf_problems[['pmf_accuracy', 'size', 'success', 'year', "round", "category"]], weights], axis=1)
-            pmf_problems.columns = ['pmf_accuracy','size', 'success', 'year', "round", "category"] + [f'weight_{i+1}' for i in range(weights.shape[1])]
+            weight_columns = pd.DataFrame(pmf_problems['weights'].tolist(), index=pmf_problems.index)
+            weight_columns.columns = [f'weight_{i+1}' for i in range(weight_columns.shape[1])]
+            pmf_problems = pd.concat([pmf_problems.drop(columns=['weights']), weight_columns], axis=1)
 
-            ### Merge Climbers
-            c_probs = pmf_problems
-
-            # ### Create PCs
-            embeddings = c_probs[[row for row in c_probs.columns if row.startswith('w')]].values
-            components = min(embeddings.shape[0], embeddings.shape[1])
-            pca = PCA(n_components=components)
+            ### Create PCs
+            embeddings = weight_columns.values
+            pca = PCA(n_components=min(embeddings.shape))
             pcs = pca.fit_transform(embeddings)
+            for pc in range(pcs.shape[1]):
+                pmf_problems[f'PC{pc+1}'] = pcs[:, pc]
 
-            for pc in range(components):
-                c_probs[f'PC{pc+1}'] = pcs[:, pc]
-
-            problems[f'{replacement_level}_{num_factors}'] = c_probs
+            problems[f'{replacement_level}_{num_factors}'] = pmf_problems
 
     return problems
 
@@ -225,7 +203,7 @@ if __name__ == '__main__':
     import pickle
     import numpy as np
     import pandas as pd
-    
+
     from pmf import PMF
     from lr import LogReg
 
@@ -236,7 +214,6 @@ if __name__ == '__main__':
     df = pd.read_csv('data/men_data.csv')
 
     ### Create Climber / Problem DataFrames
-
     climbers = create_climbers_df()
     problems = create_problems_df()
 
