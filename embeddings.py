@@ -61,13 +61,12 @@ def create_climbers_df():
             lr_pmf_climbers = pd.merge(lr_climbers, pmf_climbers, left_index=True, right_index=True, how='outer').dropna()
 
             ### Create PCs
-            embeddings = lr_pmf_climbers[[col for col in lr_pmf_climbers.columns if col.startswith('weight_')]].values
+            embeddings = weight_columns.values
             pca = PCA(n_components=min(embeddings.shape))
             pcs = pca.fit_transform(embeddings)
             for pc in range(pcs.shape[1]):
                 lr_pmf_climbers[f'PC{pc+1}'] = pcs[:, pc]
 
-            # Store the result in the dictionary
             climbers[f'{replacement_level}_{num_factors}'] = lr_pmf_climbers
 
     return climbers
