@@ -64,10 +64,10 @@ def create_correlation_matrices(dfs, pca=False):
         plt.close(fig)
 
 
-def create_pc_scatter_plot(climbers_df, variable = 'success'):
+def create_pc_scatter_plot(climbers_df, color_variable = 'success'):
     return (
         climbers_df
-        .pipe(ggplot, aes(x = 'PC1', y = 'PC2', color = variable)) +
+        .pipe(ggplot, aes(x = 'PC1', y = 'PC2', color = color_variable)) +
         geom_point() +
         labs(x = 'Principal Component 1', y = 'Principal Component 2', title = 'Climber Embeddings PCA Analysis') +
         theme_bw()
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     df = pd.read_csv('data/men_data.csv')
     ### Add heights from collected
-    heights = pd.read_csv('data/climbers_heights.csv', index_col=0)
+    heights = pd.read_csv('data/climbers_heights.csv', index_col=1)
     df = df.merge(heights, on='Name', how='left')
 
     climber_dfs = {}
