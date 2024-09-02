@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
+import numpy as np
 
 import plotnine
 from plotnine import *
@@ -65,6 +66,17 @@ def create_correlation_matrices(dfs, pca=False):
 
 
 def create_pc_scatter_plot(climbers_df, variable = 'success'):
+    if variable == "height": # Need to apply sizing
+        return (
+            climbers_df
+            .assign(sizing = lambda d: np.where(d["height"].isna(), 1, 10))
+            .pipe(ggplot, aes(x = 'PC1', y = 'PC2', color = variable, size = 'sizing')) +
+            geom_point() +
+            guides(size = "none") +
+            labs(x = 'Principal Component 1', y = 'Principal Component 2', title = 'Climber Embeddings PCA Analysis') +
+            theme_bw()
+        )
+    
     return (
         climbers_df
         .pipe(ggplot, aes(x = 'PC1', y = 'PC2', color = variable)) +
