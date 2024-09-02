@@ -12,8 +12,8 @@ def create_climbers_df(df, lr_model, pmf_model):
     climbers_df = (
         df
         .groupby('Name')
-        .agg({'Status': 'mean', 'Problem_ID': 'size'})
-        .rename(columns = {'Status': "success", 'Problem_ID': 'size'})
+        .agg({'Status': 'mean', 'Problem_ID': 'size', 'Height': 'mean'})
+        .rename(columns = {'Status': "success", 'Problem_ID': 'size', 'Height': 'height'})
     )
 
     lr_climber_names = lr_model.climber_vocab.get_itos()[1:]
@@ -52,7 +52,7 @@ def create_correlation_matrices(dfs, pca=False):
 
             prefix = 'PC' if pca else 'weight'
             rows = [row for row in df.columns if row.startswith(prefix)]
-            cols = ['coefs', 'size', 'success']
+            cols = ['coefs', 'size', 'success', 'height']
             df_corr = df.corr().loc[rows, cols]
             sns.heatmap(df_corr, annot=True, cmap='coolwarm', center=0, vmin=-1, vmax=1, ax=axs[num_factors-1])
 
@@ -85,6 +85,9 @@ if __name__ == '__main__':
 
     df = pd.read_csv('data/men_data.csv')
 
+    heights = pd.read_csv('data/climbers_heights.csv', index_col=0)
+    df = df.merge(heights, on='Name', how='left')
+
     climber_dfs = {}
     for replacement_level in REPLACEMENT_LEVELS:
         with open(f"models/lr/model_rl_{replacement_level}_full_data.pkl", 'rb') as f:
@@ -98,7 +101,7 @@ if __name__ == '__main__':
             climber_dfs[f'{replacement_level}_{num_factors}'] = climbers_df
 
             if num_factors > 1:
-                for column in ['success']:
+                for column in ['success', 'height']:
                     p = create_pc_scatter_plot(climbers_df, column)
                     p.save(f'results/climber_embeddings/scatter_plot/{column}/PCA_{replacement_level}_{num_factors}.png')
 
