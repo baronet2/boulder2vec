@@ -23,8 +23,11 @@ class LogReg():
 
         level_encoder = OneHotEncoder(categories=[["Q", "S", "F"]], sparse_output=False)
         level_X = level_encoder.fit_transform(df['Level'].values.reshape(-1,1))
+
+        problem_type_encoder = OneHotEncoder(categories=[["Top", "Zone"]], sparse_output=False)
+        problem_type_X = problem_type_encoder.fit_transform(df['Problem_category'].values.reshape(-1,1))
         
-        return np.hstack([climber_X, level_X])
+        return np.hstack([climber_X, level_X, problem_type_X])
 
     def predict(self, df):
         return self.lr.predict_proba(self.create_X(df))[:, 1]
