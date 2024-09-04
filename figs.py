@@ -7,7 +7,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 def create_correlation_matrix(df):
     rows = [row for row in df.columns if row.startswith('PC')]
-    cols = ['coefs', 'size', 'success', 'height']
+    cols = ['size', 'success', 'coefs', 'height']
     df_corr = df.corr().loc[rows, cols]
 
     plt.figure(figsize=(10, 4))
@@ -22,7 +22,7 @@ def create_correlation_matrix(df):
         annot_kws={"size": 16}
     )
 
-    ax.set_xticklabels(["LR Coef", "# Climbs", "P(Success)", "Height"], fontsize=16)
+    ax.set_xticklabels(["# Climbs", "P(Success)", "LR Coef", "Height"], fontsize=16)
     ax.set_yticklabels(['PC1', 'PC2'], fontsize=16)
 
     plt.tight_layout()
@@ -120,11 +120,17 @@ if __name__=="__main__":
     create_correlation_matrix(climbers_df)
 
     ### Figure 5 Climber Raw Embeddings Scatter (Color = Success)
-    fig = create_scatter(climbers_df, "success", (18, 10), (0.975, 0.05), False)
+    fig = create_scatter(climbers_df, "success", (18, 8), (0.975, 0.05), False)
     fig.save('figs/climber_pc_scatter_success.png')
 
     ### Figure 6 Problem Principal Component Scatter (Color = ProbType x Color = Success)
     fig = create_scatter(problems_df, "category", (10, 8), (0.975, 0.95), False)
-    fig.save('figs/problem_pc_category_success.png')
+    fig.save('figs/problem_pc_category.png')
     fig = create_scatter(problems_df, "success", (10, 8), (0.975, 0.95), False)
-    fig.save('figs/problem_pc_scatter_success.png')
+    fig.save('figs/problem_pc_success.png')
+
+    ### Figure 6 Problem RAW Scatter (Color = ProbType x Color = Success)
+    fig = create_scatter(problems_df, "category", (10, 8), (0.975, 0.05), True)
+    fig.save('figs/problem_raw_category.png')
+    fig = create_scatter(problems_df, "success", (10, 8), (0.975, 0.05), True)
+    fig.save('figs/problem_raw_success.png')
