@@ -2,57 +2,69 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchtext 
+import torchtext
 from torchtext.vocab import build_vocab_from_iterator
-import random 
-import os 
+import random
+import os
 
 # Create PMF Model
 class PMF(nn.Module):
     def __init__(self, df, replacement_level, num_factors):
         super(PMF, self).__init__()
+
         self.climber_vocab = build_vocab_from_iterator([df['Name'].values], min_freq=replacement_level, specials=['other'])
         self.climber_vocab.set_default_index(self.climber_vocab['other'])
         self.problem_vocab = build_vocab_from_iterator([df['Problem_ID'].values], min_freq=10, specials=['Problem'])
         self.problem_vocab.set_default_index(self.problem_vocab['Problem'])
+        self.problem_type_vocab = build_vocab_from_iterator([df['Problem_category'].values], specials=['Zone'])
+        self.problem_type_vocab.set_default_index(self.problem_type_vocab['Zone'])
+
         self.climber_embedding = nn.Embedding(len(self.climber_vocab), num_factors)
         self.problem_embedding = nn.Embedding(len(self.problem_vocab), num_factors)
+        self.problem_type_embedding = nn.Embedding(len(self.problem_type_vocab), num_factors)
 
-    def forward(self, climber_names, problem_ids):
+        self.fc = nn.Linear(1, 1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, climber_names, problem_ids, problem_types):
         climber_indices = torch.tensor([self.climber_vocab[name] for name in climber_names])
         problem_indices = torch.tensor([self.problem_vocab[problem] for problem in problem_ids])
+        problem_type_indices = torch.tensor([self.problem_type_vocab[ptype] for ptype in problem_types])
 
         climber_vector = self.climber_embedding(climber_indices)
         problem_vector = self.problem_embedding(problem_indices)
+        problem_type_vector = self.problem_type_embedding(problem_type_indices)
 
-        dot_product = (climber_vector * problem_vector).sum(dim=1)
-        outputs = torch.sigmoid(dot_product)
-        return outputs
+        dot_product = (climber_vector * problem_vector).sum(dim=1, keepdim=True)
+        adjusted_dot_product = dot_product * problem_type_vector.sum(dim=1, keepdim=True)
+        output = self.fc(adjusted_dot_product)
+        output = self.sigmoid(output)
+        return output.squeeze()
 
     def predict(self, df):
         self.eval()
         with torch.no_grad():
-            predictions = self(df['Name'].values, df['Problem_ID'].values)
+            predictions = self(df['Name'].values, df['Problem_ID'].values, df['Problem_category'])
         return predictions
 
 # Setting seed function
 def set_seed(seed=42):
     '''
-    Modified the function here: https://wandb.ai/sauravmaheshkar/RSNA-MICCAI/reports/How-to-Set-Random-Seeds-in-PyTorch-and-Tensorflow--VmlldzoxMDA2MDQy 
+    Modified the function here: https://wandb.ai/sauravmaheshkar/RSNA-MICCAI/reports/How-to-Set-Random-Seeds-in-PyTorch-and-Tensorflow--VmlldzoxMDA2MDQy
     Sets seeds for numpy, pytorch, python.random and PYTHONHASHSEED.
     '''
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)  # uncomment if ur using gpu / set cuda 
-    os.environ["PYTHONHASHSEED"] = str(seed) # for setting seed in hash operations in libraries 
+    torch.cuda.manual_seed(seed)  # uncomment if ur using gpu / set cuda
+    os.environ["PYTHONHASHSEED"] = str(seed) # for setting seed in hash operations in libraries
 
 # Training function
 def train_model(model, df, criterion, optimizer, num_epochs):
     for epoch in range(num_epochs):
         model.train()
         optimizer.zero_grad()
-        predictions = model(df['Name'].values, df['Problem_ID'].values)
+        predictions = model(df['Name'].values, df['Problem_ID'].values, df['Problem_category'].values)
         loss = criterion(predictions, torch.tensor(df['Status'].values, dtype=torch.float32))
         loss.backward()
         optimizer.step()
@@ -66,11 +78,11 @@ if __name__ == '__main__':
     from sklearn.model_selection import KFold
 
     torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("USE_MPS") else "cpu")
-    
+
     SEED = 42
     K_FOLDS = 5
     REPLACEMENT_LEVELS = [25, 50, 100, 250, 500, 1000]
-    LATENT_FACTORS = [1, 2, 3, 4]
+    LATENT_FACTORS = [2, 3, 4]
     NUM_EPOCHS = 1000
 
     df = pd.read_csv('data/men_data.csv')
